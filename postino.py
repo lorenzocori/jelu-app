@@ -27,7 +27,7 @@ def extract_text_from_homepage(url):
     text = ' '.join(soup.stripped_strings)
     return text[:4000]  # Limite di 4000 caratteri per evitare problemi con l'API
 
-def generate_email_with_gemini(api_key, company_name, text):
+def generate_email_with_gemini(company_name, text):
     """Invia il testo estratto a Gemini Pro 1.5 per generare un'email personalizzata."""
     genai.configure(api_key="AIzaSyDmPoXzsDWtKfg0pLkZKfA_vdPHrIpfVPI")
     model = genai.GenerativeModel("gemini-1.5-flash-latest")
