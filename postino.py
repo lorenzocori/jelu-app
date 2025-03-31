@@ -34,17 +34,24 @@ def generate_email_with_gemini(company_name, text):
     
     prompt = (
         f"""
-        Scrivi un'email formale e personalizzata per l'azienda {company_name} da parte di JELU Consulting.
-        La nostra azienda JELU Consulting si occupa di consulenza aziendale e innovazione strategica.
+        Scrivi un'email formale e personalizzata indirizzata a **{company_name}**, da parte di JELU Consulting.
         
-        Il contenuto dell'azienda {company_name} è il seguente:
-        \n{text}\n
-        L'email deve essere professionale, chiara e ben strutturata.
-        Firma l'email con:
+        JELU Consulting è una realtà nata nella LUISS Guido Carli, che si occupa di consulenza aziendale e innovazione strategica. 
+        Aiutiamo le aziende a crescere offrendo soluzioni personalizzate, con oltre 90 associati, 250 alumni e più di 20 partnership attive.
         
-        Cordiali saluti,
-        JELU Consulting
-        Email: ufficiostampa@jelu.it
+        Di seguito trovi informazioni sull’azienda {company_name}, estratte dal suo sito web:
+        
+        {text}
+        
+        Usa queste informazioni per rendere l’email davvero rilevante e mirata. Evita segnaposto come [Nome del destinatario] o [Nome dell'azienda del destinatario]. 
+        Inserisci direttamente il nome dell'azienda nel testo. 
+        Non scrivere l'oggetto. Scrivi solo il corpo dell'email.
+        
+        Firma l’email così:
+        
+        Cordiali saluti,  
+        JELU Consulting  
+        Email: ufficiostampa@jelu.it  
         Sito web: jelu.it
         """
     )
