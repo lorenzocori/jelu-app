@@ -137,8 +137,8 @@ async def main(csv_path="aziende.csv"):
         print(f"❌ Errore nella lettura delle aziende: {e}")
         return
 
-    if not os.path.exists("risultati.csv"):
-        pd.DataFrame(columns=["Azienda", "Sito", "Email", "Telefono", "Stato"]).to_csv("risultati.csv", index=False)
+   
+    pd.DataFrame(columns=["Azienda", "Sito", "Email", "Telefono", "Stato"]).to_csv("risultati.csv", index=False)
 
     async with aiohttp.ClientSession() as session:
         tasks = []
