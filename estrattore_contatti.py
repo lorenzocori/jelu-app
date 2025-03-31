@@ -128,20 +128,6 @@ async def processa_azienda_async(index, azienda, session):
 
         return index, azienda, sito, ", ".join(emails), ", ".join(telefoni), stato
 
-
-# Carica le aziende da "aziende.csv"
-if os.path.exists("aziende.csv"):
-    df_aziende = pd.read_csv("aziende.csv", usecols=[0], names=["Azienda"], header=0, on_bad_lines='skip')
-    aziende_da_analizzare = df_aziende["Azienda"].dropna().unique().tolist()
-    print(f"\n📌 {len(aziende_da_analizzare)} aziende verranno analizzate...\n")
-else:
-    print("❌ Il file aziende.csv non esiste! Crealo prima di eseguire lo script.")
-    exit()
-
-# Inizializza il file di output se non esiste
-if not os.path.exists("risultati.csv"):
-    pd.DataFrame(columns=["Azienda", "Sito", "Email", "Telefono", "Stato"]).to_csv("risultati.csv", index=False)
-
 async def main(csv_path="aziende.csv"):
     try:
         df_aziende = pd.read_csv(csv_path, usecols=[0], names=["Azienda"], header=0, on_bad_lines='skip')
@@ -181,5 +167,5 @@ async def main(csv_path="aziende.csv"):
         print("\n✅ Estrazione completata.")
 
 # Non chiamare direttamente asyncio.run(main()) se lo usi in Streamlit
-if __name__ == "__main__":
-    asyncio.run(main())
+#if __name__ == "__main__":
+#    asyncio.run(main())
