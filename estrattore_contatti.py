@@ -129,6 +129,7 @@ async def processa_azienda_async(index, azienda, session):
         return index, azienda, sito, ", ".join(emails), ", ".join(telefoni), stato
 
 async def main(csv_path="aziende.csv"):
+    pd.DataFrame(columns=["Azienda", "Sito", "Email", "Telefono", "Stato"]).to_csv("risultati.csv", index=False)
     try:
         df_aziende = pd.read_csv(csv_path, usecols=[0], names=["Azienda"], header=0, on_bad_lines='skip')
         aziende_da_analizzare = df_aziende["Azienda"].dropna().unique().tolist()
@@ -136,9 +137,6 @@ async def main(csv_path="aziende.csv"):
     except Exception as e:
         print(f"❌ Errore nella lettura delle aziende: {e}")
         return
-
-   
-    pd.DataFrame(columns=["Azienda", "Sito", "Email", "Telefono", "Stato"]).to_csv("risultati.csv", index=False)
 
     async with aiohttp.ClientSession() as session:
         tasks = []
