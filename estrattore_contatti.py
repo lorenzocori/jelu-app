@@ -1,6 +1,3 @@
-## duckduckgo e modo in cui vengono inseriti sul .csv
-## problemi --> troppe request --> vediamo se basta aggiungere i time sleep altrimenti --> asyncio
-
 import os
 import time
 import re
