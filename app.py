@@ -18,7 +18,7 @@ if file:
     try:
         # Estrai ragioni sociali dal foglio "Risultati"
         df = pd.read_excel(file, sheet_name="Risultati", usecols=["Ragione sociale"])
-        aziende = df["Ragione Sociale"].dropna().unique().tolist()
+        aziende = df["Ragione sociale"].dropna().unique().tolist()
         st.success(f"✅ {len(aziende)} aziende caricate correttamente.")
 
         # Salva in CSV temporaneo per usarlo nello script async
