@@ -5,3 +5,4 @@ google-generativeai
 pandas
 requests
 streamlit
+xlrd>=2.0.1
