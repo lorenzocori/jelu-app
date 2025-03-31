@@ -65,6 +65,9 @@ def process_csv(file_path, mittente, password):
 
     if "Stato Invio" not in df.columns:
         df["Stato Invio"] = None
+    
+    if "Oggetto Email" not in df.columns:
+        df["Oggetto Email"] = None
 
     for index, row in df.iterrows():
         url = row.get("Sito")
@@ -82,6 +85,8 @@ def process_csv(file_path, mittente, password):
         if text:
             corpo_email = generate_email_with_gemini(company_name, text)
             oggetto = f"Proposta di collaborazione con JELU Consulting"
+            
+            df.at[index, "Oggetto Email"] = oggetto
 
             success = invia_email(mittente, password, email_destinatario, oggetto, corpo_email)
             df.at[index, "Stato Invio"] = "OK" if success else "Errore"
@@ -89,8 +94,10 @@ def process_csv(file_path, mittente, password):
             print(f"Nessun testo trovato per {company_name}")
             df.at[index, "Stato Invio"] = "Errore"
 
-        df.to_csv(file_path, index=False)
         time.sleep(3)
+
+    df.to_csv(file_path, index=False)
+    time.sleep(3)
 
 
 
