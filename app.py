@@ -17,7 +17,7 @@ password = st.text_input("🔐 Password dell'app (Gmail, non la password normale
 if file:
     try:
         # Estrai ragioni sociali dal foglio "Risultati"
-        df = pd.read_excel(file, sheet_name="Risultati", usecols=["Ragione Sociale"])
+        df = pd.read_excel(file, sheet_name="Risultati", usecols=["Ragione sociale"])
         aziende = df["Ragione Sociale"].dropna().unique().tolist()
         st.success(f"✅ {len(aziende)} aziende caricate correttamente.")
 
