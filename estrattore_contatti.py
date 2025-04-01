@@ -89,10 +89,8 @@ async def trova_pagina_contatti(session, base_url):
         print(f"❌ Errore generico per {base_url}: {err}")
     return base_url
 
-semaforo = asyncio.Semaphore(5) #RED LIGHTTTTT
-
 # Processa un'azienda
-async def processa_azienda_async(index, azienda, session):
+async def processa_azienda_async(index, azienda, session, semaforo):
     async with semaforo:
         await asyncio.sleep(random.uniform(5, 10))
         loop = asyncio.get_running_loop()
@@ -130,6 +128,7 @@ async def processa_azienda_async(index, azienda, session):
 
 async def main(csv_path="aziende.csv"):
     pd.DataFrame(columns=["Azienda", "Sito", "Email", "Telefono", "Stato"]).to_csv("risultati.csv", index=False)
+    semaforo = asyncio.Semaphore(5) #RED LIGHTTTTT
     try:
         df_aziende = pd.read_csv(csv_path, usecols=[0], names=["Azienda"], header=0, on_bad_lines='skip')
         aziende_da_analizzare = df_aziende["Azienda"].dropna().unique().tolist()
@@ -141,7 +140,7 @@ async def main(csv_path="aziende.csv"):
     async with aiohttp.ClientSession() as session:
         tasks = []
         for index, azienda in enumerate(aziende_da_analizzare):
-            tasks.append(processa_azienda_async(index, azienda, session))
+            tasks.append(processa_azienda_async(index, azienda, session, semaforo))
 
         successi = 0
         for future in asyncio.as_completed(tasks):
