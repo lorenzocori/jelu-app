@@ -27,10 +27,12 @@ if file:
 
         # Salva in CSV temporaneo per usarlo nello script async
         temp_file = "aziende_temp.csv"
+        pd.DataFrame(aziende, columns=["Azienda"]).to_csv(temp_file, index=False)
         
-        # ✅ Sovrascrivi completamente risultati.csv con intestazioni pulite
-        with open("risultati.csv", "w", encoding="utf-8", newline='') as f:
-            pd.DataFrame(columns=["Azienda", "Sito", "Email", "Telefono", "Stato"]).to_csv(f, index=False)
+        # Elimina il vecchio risultati.csv per evitare conflitti o dati doppi
+        if os.path.exists("risultati.csv"):
+            os.remove("risultati.csv")
+
 
 
         # Estrazione contatti
