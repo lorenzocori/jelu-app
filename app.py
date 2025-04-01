@@ -70,12 +70,26 @@ if file:
                 
                     if mittente and password:
                         st.info("📤 Invio email in corso...")
-                        process_csv("risultati.csv", mittente, password)
+                
+                        # 🔁 Crea un contenitore per log dinamici e barra di progresso
+                        log = st.empty()
+                        progress_bar = st.progress(0)
+                
+                        # 🔄 Esegui l'invio passando le funzioni di callback
+                        process_csv(
+                            "risultati.csv",
+                            mittente,
+                            password,
+                            progress_callback=progress_bar.progress,
+                            log_callback=log.write
+                        )
+                
                         st.success("✅ Tutte le email sono state inviate.")
                         with open("risultati.csv", "rb") as f:
                             st.download_button("📥 Scarica il file aggiornato", f, file_name="email_inviate.csv")
                     else:
                         st.error("❗ Inserisci sia l'email del mittente che la password dell'app.")
+
                                 
     except Exception as e:
         st.error(f"❌ Errore durante la lettura del file: {e}")
