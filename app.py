@@ -11,8 +11,14 @@ st.title("📬 Automazione JELU: da Excel all'email ✨")
 file = st.file_uploader("📎 Carica il file Excel con le aziende", type=["xls"])
 
 # Inserimento email mittente e password app
-mittente = st.text_input("📤 Email del mittente (es. jelu@gmail.com)")
-password = st.text_input("🔐 Password dell'app (Gmail, non la password normale)", type="password")
+if "mittente" not in st.session_state:
+    st.session_state["mittente"] = ""
+if "password" not in st.session_state:
+    st.session_state["password"] = ""
+
+st.session_state["mittente"] = st.text_input("📤 Email del mittente", st.session_state["mittente"])
+st.session_state["password"] = st.text_input("🔐 Password dell'app", type="password", value=st.session_state["password"])
+
 
 if file:
     try:
@@ -29,12 +35,6 @@ if file:
         temp_file = "aziende_temp.csv"
         pd.DataFrame(aziende, columns=["Azienda"]).to_csv(temp_file, index=False)
         
-        # Elimina il vecchio risultati.csv per evitare conflitti o dati doppi
-        if os.path.exists("risultati.csv"):
-            os.remove("risultati.csv")
-
-
-
         # Estrazione contatti
         if st.button("🚀 Estrai contatti"):
             st.info("⏳ Estrazione in corso...")
@@ -64,15 +64,19 @@ if file:
                                 st.markdown("**Oggetto:** Proposta di collaborazione con JELU Consulting")
                                 st.write(corpo_email)
 
-            if st.button("✉️ Invia Email a tutte le aziende"):
-                if mittente and password:
-                    st.info("📤 Invio email in corso...")
-                    process_csv("risultati.csv", mittente, password)
-                    st.success("✅ Tutte le email sono state inviate.")
-                    with open("risultati.csv", "rb") as f:
-                        st.download_button("📥 Scarica il file aggiornato", f, file_name="email_inviate.csv")
-                else:
-                    st.error("❗ Inserisci sia l'email del mittente che la password dell'app.")
+                if st.button("✉️ Invia Email a tutte le aziende"):
+                    mittente = st.session_state.get("mittente", "")
+                    password = st.session_state.get("password", "")
+                
+                    if mittente and password:
+                        st.info("📤 Invio email in corso...")
+                        process_csv("risultati.csv", mittente, password)
+                        st.success("✅ Tutte le email sono state inviate.")
+                        with open("risultati.csv", "rb") as f:
+                            st.download_button("📥 Scarica il file aggiornato", f, file_name="email_inviate.csv")
+                    else:
+                        st.error("❗ Inserisci sia l'email del mittente che la password dell'app.")
+                                
     except Exception as e:
         st.error(f"❌ Errore durante la lettura del file: {e}")
 else:
