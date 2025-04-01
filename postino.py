@@ -110,6 +110,8 @@ def process_csv(file_path, mittente, password):
 
 def invia_email(mittente, password, destinatario, oggetto, corpo):
     try:
+        corpo_html = corpo.replace("\n", "<br>")
+
         html_template = f"""
         <html>
           <body style="background-color:#003153; color:white; font-family:Arial, sans-serif; padding:30px;">
@@ -122,7 +124,7 @@ def invia_email(mittente, password, destinatario, oggetto, corpo):
             </div>
 
             <div style="text-align:center; margin-top:40px;">
-              <img src="https://jelu.it/logo.png" alt="JELU Logo" style="max-width:100px;">
+                <img src="https://static.wixstatic.com/media/d61b9f_43cd02c06bdf456dba086be862a4b4bc~mv2.png" alt="JELU Consulting" style="width: 150px; height: auto; margin-bottom: 30px;">
             </div>
           </body>
         </html>
