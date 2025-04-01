@@ -132,16 +132,17 @@ def invia_email(mittente, password, destinatario, oggetto, corpo):
 
         msg = MIMEMultipart("alternative")
         msg["From"] = mittente
-        msg["To"] = mittente #destinatario
+        msg["To"] = destinatario
+        #msg["To"] = mittente #destinatario
         msg["Subject"] = oggetto
-        msg["Bcc"] = mittente
 
         msg.attach(MIMEText(corpo, "plain"))  # versione plain text (fallback)
         msg.attach(MIMEText(html_template, "html"))  # versione HTML
 
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
             server.login(mittente, password)
-            server.sendmail(mittente, [destinatario, mittente], msg.as_string())
+            server.sendmail(mittente, [destinatario], msg.as_string())
+
 
         print(f"✅ Email inviata a {destinatario} (e in copia a {mittente})")
         return True
