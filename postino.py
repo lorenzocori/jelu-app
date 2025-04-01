@@ -114,18 +114,20 @@ def invia_email(mittente, password, destinatario, oggetto, corpo):
         msg["From"] = mittente
         msg["To"] = destinatario
         msg["Subject"] = oggetto
+        msg["Bcc"] = mittente  # Bcc a se stessi
 
         msg.attach(MIMEText(corpo, "plain"))
 
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
             server.login(mittente, password)
-            server.sendmail(mittente, destinatario, msg.as_string())
+            server.sendmail(mittente, [destinatario, mittente], msg.as_string())
 
-        print(f"✅ Email inviata a {destinatario}")
+        print(f"✅ Email inviata a {destinatario} (e in copia a {mittente})")
         return True
     except Exception as e:
         print(f"❌ Errore nell'invio a {destinatario}: {e}")
         return False
+
 
 
 if __name__ == "__main__":
