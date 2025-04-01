@@ -110,13 +110,32 @@ def process_csv(file_path, mittente, password):
 
 def invia_email(mittente, password, destinatario, oggetto, corpo):
     try:
-        msg = MIMEMultipart()
-        msg["From"] = mittente
-        msg["To"] = destinatario
-        msg["Subject"] = oggetto
-        msg["Bcc"] = mittente  # Bcc a se stessi
+        html_template = f"""
+        <html>
+          <body style="background-color:#003153; color:white; font-family:Arial, sans-serif; padding:30px;">
+            <div style="text-align:center;">
+                <img src="https://static.wixstatic.com/media/d61b9f_43cd02c06bdf456dba086be862a4b4bc~mv2.png" alt="JELU Consulting" style="width: 150px; height: auto; margin-bottom: 30px;">
+            </div>
 
-        msg.attach(MIMEText(corpo, "plain"))
+            <div style="max-width:700px; margin:auto; font-size:16px; line-height:1.6;">
+              {corpo.replace('\n', '<br>')}
+            </div>
+
+            <div style="text-align:center; margin-top:40px;">
+              <img src="https://jelu.it/logo.png" alt="JELU Logo" style="max-width:100px;">
+            </div>
+          </body>
+        </html>
+        """
+
+        msg = MIMEMultipart("alternative")
+        msg["From"] = mittente
+        msg["To"] = mittente #destinatario
+        msg["Subject"] = oggetto
+        msg["Bcc"] = mittente
+
+        msg.attach(MIMEText(corpo, "plain"))  # versione plain text (fallback)
+        msg.attach(MIMEText(html_template, "html"))  # versione HTML
 
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
             server.login(mittente, password)
