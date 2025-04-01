@@ -63,7 +63,8 @@ def generate_email_with_gemini(company_name, text):
         print(f"Errore nella generazione dell'email per {company_name}: {e}")
         return None
 
-def process_csv(file_path, mittente, password):
+def process_csv(file_path, mittente, password, progress_callback=None, log_callback=None):
+
     df = pd.read_csv(file_path)
 
     if "Sito" not in df.columns or "Azienda" not in df.columns or "Email" not in df.columns:
@@ -101,6 +102,13 @@ def process_csv(file_path, mittente, password):
             print(f"Nessun testo trovato per {company_name}")
             df.at[index, "Stato Invio"] = "Errore"
 
+        if log_callback:
+            log_callback(f"📨 Email per {company_name}: {'✅ Inviata' if success else '❌ Errore'}")
+
+        if progress_callback:
+            progress_callback((index + 1) / len(df))
+
+        
         time.sleep(3)
 
     df.to_csv(file_path, index=False)
