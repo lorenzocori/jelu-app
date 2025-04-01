@@ -27,10 +27,20 @@ if file:
 
         # Estrazione contatti
         if st.button("🚀 Estrai contatti"):
-            st.info("⏳ Estrazione in corso...")
-            asyncio.run(estrattore_main(csv_path=temp_file))
+            with st.spinner("⏳ Estrazione in corso..."):
+                # Reset del file risultati per evitare dati duplicati
+                if os.path.exists("risultati.csv"):
+                    os.remove("risultati.csv")
+        
+                asyncio.run(estrattore_main(csv_path=temp_file))
+        
             st.success("✅ Estrazione completata. File generato: risultati.csv")
-
+        
+            # Elimina il file temporaneo
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
+         
+                
         # Invio email solo se esiste il file risultati
         if os.path.exists("risultati.csv"):
             st.write("📄 File con email generato. Pronto per l'invio!")
