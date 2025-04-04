@@ -25,7 +25,7 @@ def extract_text_from_homepage(url):
     return text[:4000]
 
 def generate_email_with_gemini(company_name, text):
-    genai.configure(api_key="INSERISCI_LA_TUA_API_KEY")
+    genai.configure(api_key="AIzaSyBwVUUPRA8TNfZ4M6mEOMaBeudjFwok30Y")
     model = genai.GenerativeModel("gemini-1.5-flash-latest")
 
     prompt = f"""
@@ -95,7 +95,7 @@ def invia_email(mittente, password, destinatario, oggetto, corpo):
         print(f"❌ Errore nell'invio a {destinatario}: {e}")
         return False
 
-def process_csv(file_path, mittente, password):
+def process_csv(file_path, mittente, password, progress_callback=None, log_callback=None):
     try:
         print("📂 Directory corrente:", os.getcwd())
         if not os.path.exists(file_path):
@@ -141,6 +141,13 @@ def process_csv(file_path, mittente, password):
                 print(f"❌ Nessun testo trovato per {company_name}")
 
             df.at[index, "Stato Invio"] = "OK" if success else "Errore"
+
+            if log_callback:
+                log_callback(f"📨 Email per {company_name}: {'✅ Inviata' if success else '❌ Errore'}")
+
+            if progress_callback:
+                progress_callback((index + 1) / len(df))
+
             time.sleep(3)
 
         df.to_csv(file_path, index=False)
