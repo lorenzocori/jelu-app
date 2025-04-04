@@ -146,7 +146,11 @@ def process_csv(file_path, mittente, password):
     print("\n✅ Tutte le email processate e salvate nel file.")
 
 if __name__ == "__main__":
-    FILE_PATH = "risultati.csv"
-    EMAIL_MITTENTE = input("Inserisci l'email del mittente: ")
-    PASSWORD_EMAIL = input("Inserisci la password dell'app: ")
-    process_csv(FILE_PATH, EMAIL_MITTENTE, PASSWORD_EMAIL)
+    try:
+        FILE_PATH = "risultati.csv"
+        print("🛠️ Directory corrente:", os.getcwd())
+        EMAIL_MITTENTE = input("Inserisci l'email del mittente: ")
+        PASSWORD_EMAIL = input("Inserisci la password dell'app: ")
+        process_csv(FILE_PATH, EMAIL_MITTENTE, PASSWORD_EMAIL)
+    except Exception as e:
+        print(f"❌ Errore fatale: {type(e).__name__} - {e}")
