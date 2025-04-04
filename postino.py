@@ -162,7 +162,8 @@ def invia_email(mittente, password, destinatario, oggetto, corpo):
 
 if __name__ == "__main__":
     API_KEY = "..."
-    FILE_PATH = "..."
+    FILE_PATH = "risultati.csv"
+
 
     EMAIL_MITTENTE = input("Inserisci l'email del mittente: ")
     PASSWORD_EMAIL = input("Inserisci la password dell'app: ")
