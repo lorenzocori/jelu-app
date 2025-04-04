@@ -96,54 +96,58 @@ def invia_email(mittente, password, destinatario, oggetto, corpo):
         return False
 
 def process_csv(file_path, mittente, password):
-    print("📂 Directory corrente:", os.getcwd())
-    if not os.path.exists(file_path):
-        print(f"❌ File non trovato: {file_path}")
-        return
+    try:
+        print("📂 Directory corrente:", os.getcwd())
+        if not os.path.exists(file_path):
+            print(f"❌ File non trovato: {file_path}")
+            return
 
-    df = pd.read_csv(file_path)
+        df = pd.read_csv(file_path)
 
-    if "Sito" not in df.columns or "Azienda" not in df.columns or "Email" not in df.columns:
-        print("Errore: Il file CSV deve contenere le colonne 'Sito', 'Azienda' e 'Email'")
-        return
+        if "Sito" not in df.columns or "Azienda" not in df.columns or "Email" not in df.columns:
+            print("Errore: Il file CSV deve contenere le colonne 'Sito', 'Azienda' e 'Email'")
+            return
 
-    if "Stato Invio" not in df.columns:
-        df["Stato Invio"] = None
+        if "Stato Invio" not in df.columns:
+            df["Stato Invio"] = None
 
-    if "Oggetto Email" not in df.columns:
-        df["Oggetto Email"] = None
+        if "Oggetto Email" not in df.columns:
+            df["Oggetto Email"] = None
 
-    for index, row in df.iterrows():
-        url = row.get("Sito")
-        company_name = row.get("Azienda")
-        email_destinatario = row.get("Email")
-        success = False
+        for index, row in df.iterrows():
+            url = row.get("Sito")
+            company_name = row.get("Azienda")
+            email_destinatario = row.get("Email")
+            success = False
 
-        if pd.isna(url) or not str(url).startswith("http") or pd.isna(email_destinatario):
-            print(f"Dati mancanti per {company_name}, saltato.")
-            df.at[index, "Stato Invio"] = "Saltato"
-            continue
+            if pd.isna(url) or not str(url).startswith("http") or pd.isna(email_destinatario):
+                print(f"Dati mancanti per {company_name}, saltato.")
+                df.at[index, "Stato Invio"] = "Saltato"
+                continue
 
-        print(f"\n📨 Generazione email per: {company_name} ({url})")
-        text = extract_text_from_homepage(url)
+            print(f"\n📨 Generazione email per: {company_name} ({url})")
+            text = extract_text_from_homepage(url)
 
-        if text:
-            corpo_email = generate_email_with_gemini(company_name, text)
-            if corpo_email:
-                oggetto = f"Proposta di collaborazione con JELU Consulting"
-                df.at[index, "Oggetto Email"] = oggetto
-                print("✉️ Invio email a:", email_destinatario)
-                success = invia_email(mittente, password, email_destinatario, oggetto, corpo_email)
+            if text:
+                corpo_email = generate_email_with_gemini(company_name, text)
+                if corpo_email:
+                    oggetto = f"Proposta di collaborazione con JELU Consulting"
+                    df.at[index, "Oggetto Email"] = oggetto
+                    print("✉️ Invio email a:", email_destinatario)
+                    success = invia_email(mittente, password, email_destinatario, oggetto, corpo_email)
+                else:
+                    print(f"❌ Email non generata per {company_name}")
             else:
-                print(f"❌ Email non generata per {company_name}")
-        else:
-            print(f"❌ Nessun testo trovato per {company_name}")
+                print(f"❌ Nessun testo trovato per {company_name}")
 
-        df.at[index, "Stato Invio"] = "OK" if success else "Errore"
-        time.sleep(3)
+            df.at[index, "Stato Invio"] = "OK" if success else "Errore"
+            time.sleep(3)
 
-    df.to_csv(file_path, index=False)
-    print("\n✅ Tutte le email processate e salvate nel file.")
+        df.to_csv(file_path, index=False)
+        print("\n✅ Tutte le email processate e salvate nel file.")
+
+    except Exception as e:
+        print(f"❌ Errore fatale in process_csv: {type(e).__name__} - {e}")
 
 if __name__ == "__main__":
     try:
