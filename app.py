@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import asyncio
 import os
+from io import StringIO
 from estrattore_contatti import main as estrattore_main
 from postino import process_csv, extract_text_from_homepage, generate_email_with_gemini
 
@@ -21,9 +22,6 @@ st.session_state["password"] = st.text_input("🔐 Password dell'app", type="pas
 
 if file:
     try:
-        if os.path.exists("risultati.csv"):
-            os.remove("risultati.csv")
-
         df = pd.read_excel(file, sheet_name="Risultati", usecols=["Ragione sociale"])
         aziende = df["Ragione sociale"].dropna().unique().tolist()
         st.success(f"✅ {len(aziende)} aziende caricate correttamente.")
@@ -34,12 +32,17 @@ if file:
         if st.button("🚀 Estrai contatti"):
             st.info("⏳ Estrazione in corso...")
             asyncio.run(estrattore_main(csv_path=temp_file))
-            st.success("✅ Estrazione completata. File generato: risultati.csv")
 
-        if os.path.exists("risultati.csv"):
-            df_result = pd.read_csv("risultati.csv")
-            st.session_state["df_result"] = df_result
+            if os.path.exists("risultati.csv"):
+                df_result = pd.read_csv("risultati.csv")
+                st.session_state["df_result"] = df_result
+                st.session_state["csv_buffer"] = df_result.to_csv(index=False).encode("utf-8")
+                st.success("✅ Estrazione completata e dati caricati in memoria.")
+            else:
+                st.error("❌ File 'risultati.csv' non trovato dopo l'estrazione.")
 
+        if "df_result" in st.session_state:
+            df_result = st.session_state["df_result"]
             if "Azienda" in df_result.columns and "Sito" in df_result.columns and "Email" in df_result.columns:
                 st.subheader("📨 Anteprima delle email generate")
 
@@ -69,6 +72,10 @@ if "df_result" in st.session_state and st.button("✉️ Invia Email a tutte le 
     if mittente and password:
         st.info("📤 Invio email in corso...")
 
+        # Salva il DataFrame in file temporaneo per il postino
+        df_result = st.session_state["df_result"]
+        df_result.to_csv("risultati.csv", index=False)
+
         log = st.empty()
         progress_bar = st.progress(0)
 
@@ -82,11 +89,15 @@ if "df_result" in st.session_state and st.button("✉️ Invia Email a tutte le 
             )
             st.success("✅ Tutte le email sono state inviate.")
 
-            if os.path.exists("risultati.csv"):
-                with open("risultati.csv", "rb") as f:
-                    st.download_button("📥 Scarica il file aggiornato", f, file_name="email_inviate.csv")
+            if "csv_buffer" in st.session_state:
+                st.download_button(
+                    "📥 Scarica il file aggiornato",
+                    st.session_state["csv_buffer"],
+                    file_name="email_inviate.csv",
+                    mime="text/csv"
+                )
             else:
-                st.warning("⚠️ File 'risultati.csv' non trovato. Nessun file da scaricare.")
+                st.warning("⚠️ Nessun contenuto da scaricare trovato.")
 
         except Exception as e:
             st.error(f"❌ Errore durante l'invio: {type(e).__name__} – {e}")
