@@ -1,4 +1,3 @@
-```python
 import streamlit as st
 import pandas as pd
 import asyncio
@@ -124,4 +123,3 @@ if "df_result" in st.session_state and st.button("✉️ Invia Email a tutte le 
             st.error(f"❌ Errore durante l'invio: {type(e).__name__} – {e}")
     else:
         st.error("❗ Inserisci sia l'email del mittente che la password dell'app.")
-```
