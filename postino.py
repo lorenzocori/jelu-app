@@ -25,7 +25,7 @@ def extract_text_from_homepage(url):
     return text[:4000]
 
 def generate_email_with_gemini(company_name, text):
-    genai.configure(api_key="AIzaSyBwVUUPRA8TNfZ4M6mEOMaBeudjFwok30Y")
+    genai.configure(api_key="AIzaSyC3qCzwKd3eFnWrWQzXIpxutyomwXQ92V0")
     model = genai.GenerativeModel("gemini-1.5-flash-latest")
 
     prompt = f"""
