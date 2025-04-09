@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import asyncio
@@ -51,13 +52,30 @@ if file:
                     sito = row["Sito"]
                     destinatario = row["Email"]
 
-                    if pd.notna(sito) and str(sito).startswith("http") and pd.notna(destinatario):
-                        text = extract_text_from_homepage(sito)
-                        if text:
+                    with st.expander(f"📩 {azienda} — {destinatario if pd.notna(destinatario) else 'email non trovata'}"):
+                        if pd.isna(sito) or not str(sito).startswith("http"):
+                            st.warning(f"⚠️ Nessun sito valido trovato per {azienda}")
+                            continue
+
+                        try:
+                            text = extract_text_from_homepage(sito)
+                            if not text or len(text.strip()) < 30:
+                                st.warning("⚠️ Nessun testo significativo trovato sulla homepage.")
+                                continue
+
+                            st.info("✅ Testo estratto correttamente dal sito.")
+                            st.code(text[:500] + "...", language="text")
+
                             corpo_email = generate_email_with_gemini(azienda, text)
-                            with st.expander(f"📩 Email per {azienda} ({destinatario})"):
+
+                            if corpo_email and corpo_email.strip():
+                                st.success("✅ Email generata con Gemini:")
                                 st.markdown("**Oggetto:** Proposta di collaborazione con JELU Consulting")
                                 st.write(corpo_email)
+                            else:
+                                st.warning("⚠️ Gemini non ha restituito testo.")
+                        except Exception as e:
+                            st.error(f"❌ Errore durante l'elaborazione per {azienda}: {e}")
 
     except Exception as e:
         st.error(f"❌ Errore durante la lettura del file: {e}")
@@ -72,7 +90,6 @@ if "df_result" in st.session_state and st.button("✉️ Invia Email a tutte le 
     if mittente and password:
         st.info("📤 Invio email in corso...")
 
-        # Salva il DataFrame in file temporaneo per il postino
         df_result = st.session_state["df_result"]
         df_result.to_csv("risultati.csv", index=False)
 
@@ -98,7 +115,6 @@ if "df_result" in st.session_state and st.button("✉️ Invia Email a tutte le 
                 )
             else:
                 st.warning("⚠️ Nessun contenuto da scaricare trovato.")
-
         except Exception as e:
             st.error(f"❌ Errore durante l'invio: {type(e).__name__} – {e}")
     else:
