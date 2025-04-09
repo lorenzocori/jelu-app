@@ -37,16 +37,30 @@ async def fetch(session, url):
 def trova_sito_duckduckgo(azienda):
     try:
         with DDGS() as ddgs:
-            results = list(ddgs.text(f"{azienda} sito ufficiale", max_results=5))
+            query = f"{azienda} sito ufficiale"
+            print(f"🔍 Cerco su DuckDuckGo: {query}")
+            results = list(ddgs.text(query, max_results=8))
 
         for result in results:
-            url = result["href"]
-            if not any(s in url for s in ['facebook.com', 'linkedin.com', 'instagram.com', 'ufficiocamerale.it']):
-                return url
+            url = result.get("href") or result.get("url")
+            titolo = result.get("title", "Senza titolo")
+            if not url:
+                continue
+
+            # Escludi solo i siti notoriamente inutili
+            if any(s in url for s in ['facebook.com', 'linkedin.com', 'instagram.com', 'ufficiocamerale.it']):
+                continue
+
+            print(f"🌐 Trovato: {url} – Titolo: {titolo}")
+            return url
+
+        print("⚠️ Nessun sito valido tra i risultati.")
         return None
+
     except Exception as e:
         print(f"❌ Errore nella ricerca DuckDuckGo per {azienda}: {e}")
         return None
+
 
 async def trova_pagina_contatti(session, base_url):
     try:
