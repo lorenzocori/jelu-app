@@ -1,3 +1,4 @@
+```python
 import streamlit as st
 import pandas as pd
 import asyncio
@@ -8,17 +9,12 @@ from postino import process_csv, extract_text_from_homepage, generate_email_with
 
 st.title("📬 Automazione JELU: da Excel all'email ✨")
 
-# Caricamento file Excel
-file = st.file_uploader("📎 Carica il file Excel con le aziende", type=["xls"])
-
 # Email mittente e password
-if "mittente" not in st.session_state:
-    st.session_state["mittente"] = ""
-if "password" not in st.session_state:
-    st.session_state["password"] = ""
+st.session_state["mittente"] = st.text_input("📤 Email del mittente", value=st.session_state.get("mittente", ""))
+st.session_state["password"] = st.text_input("🔐 Password dell'app", type="password", value=st.session_state.get("password", ""))
 
-st.session_state["mittente"] = st.text_input("📤 Email del mittente", st.session_state["mittente"])
-st.session_state["password"] = st.text_input("🔐 Password dell'app", type="password", value=st.session_state["password"])
+# Caricamento Excel
+file = st.file_uploader("📎 Carica il file Excel con le aziende", type=["xls"])
 
 if file:
     try:
@@ -35,12 +31,22 @@ if file:
 
             if os.path.exists("risultati.csv"):
                 df_result = pd.read_csv("risultati.csv")
+
+                # 🔧 Aggiunta colonne mancanti per la personalizzazione
+                if "Oggetto Email" not in df_result.columns:
+                    df_result["Oggetto Email"] = "Proposta di collaborazione con JELU Consulting"
+                if "Corpo Email" not in df_result.columns:
+                    df_result["Corpo Email"] = ""
+                if "Da Inviare" not in df_result.columns:
+                    df_result["Da Inviare"] = True
+
                 st.session_state["df_result"] = df_result
                 st.session_state["csv_buffer"] = df_result.to_csv(index=False).encode("utf-8")
                 st.success("✅ Estrazione completata.")
             else:
                 st.error("❌ File 'risultati.csv' non trovato dopo l'estrazione.")
 
+        # Mostra editor personalizzazione se disponibile
         if "df_result" in st.session_state:
             df_result = st.session_state["df_result"]
 
@@ -58,12 +64,16 @@ if file:
                         key_prefix = f"{azienda}_{i}"
 
                         with st.expander(f"📩 Email per {azienda} ({email})"):
-                            text = extract_text_from_homepage(sito)
-                            corpo_default = generate_email_with_gemini(azienda, text) if text else "TESTO NON DISPONIBILE"
+                            # Testo sito e suggerimento AI (solo se il campo è vuoto)
+                            if not row["Corpo Email"]:
+                                text = extract_text_from_homepage(sito)
+                                corpo_default = generate_email_with_gemini(azienda, text) if text else "TESTO NON DISPONIBILE"
+                            else:
+                                corpo_default = row["Corpo Email"]
 
-                            oggetto = st.text_input("Oggetto", "Proposta di collaborazione con JELU Consulting", key=f"{key_prefix}_oggetto")
+                            oggetto = st.text_input("Oggetto", row["Oggetto Email"], key=f"{key_prefix}_oggetto")
                             corpo = st.text_area("Testo email", corpo_default, height=200, key=f"{key_prefix}_corpo")
-                            inviare = st.checkbox("✅ Invia a questa azienda", value=True, key=f"{key_prefix}_invio")
+                            inviare = st.checkbox("✅ Invia a questa azienda", value=row["Da Inviare"], key=f"{key_prefix}_invio")
 
                             updated_rows.append({
                                 "Azienda": azienda,
@@ -114,3 +124,4 @@ if "df_result" in st.session_state and st.button("✉️ Invia Email a tutte le 
             st.error(f"❌ Errore durante l'invio: {type(e).__name__} – {e}")
     else:
         st.error("❗ Inserisci sia l'email del mittente che la password dell'app.")
+```
