@@ -24,69 +24,87 @@ if file:
         temp_file = "aziende_temp.csv"
         pd.DataFrame(aziende, columns=["Azienda"]).to_csv(temp_file, index=False)
 
-        if st.button("🚀 Estrai contatti"):
-            st.info("⏳ Estrazione in corso...")
+        if st.button("🚀 Estrai contatti e genera email"):
+            st.info("⏳ Estrazione e generazione in corso...")
             asyncio.run(estrattore_main(csv_path=temp_file))
 
             if os.path.exists("risultati.csv"):
                 df_result = pd.read_csv("risultati.csv")
 
-                # 🔧 Aggiunta colonne mancanti per la personalizzazione
-                if "Oggetto Email" not in df_result.columns:
-                    df_result["Oggetto Email"] = "Proposta di collaborazione con JELU Consulting"
-                if "Corpo Email" not in df_result.columns:
-                    df_result["Corpo Email"] = ""
-                if "Da Inviare" not in df_result.columns:
-                    df_result["Da Inviare"] = True
-
-                st.session_state["df_result"] = df_result
-                st.session_state["csv_buffer"] = df_result.to_csv(index=False).encode("utf-8")
-                st.success("✅ Estrazione completata.")
-            else:
-                st.error("❌ File 'risultati.csv' non trovato dopo l'estrazione.")
-
-        # Mostra editor personalizzazione se disponibile
-        if "df_result" in st.session_state:
-            df_result = st.session_state["df_result"]
-
-            if "Azienda" in df_result.columns and "Sito" in df_result.columns and "Email" in df_result.columns:
-                st.subheader("📨 Personalizzazione email")
-
-                updated_rows = []
-
+                # 🔧 Aggiunta colonne mancanti + generazione email con Gemini
+                lista_email = []
                 for i, row in df_result.iterrows():
                     azienda = row["Azienda"]
                     sito = row["Sito"]
                     email = row["Email"]
 
+                    # Default
+                    oggetto = "Proposta di collaborazione con JELU Consulting"
+                    corpo = ""
+                    invio = True
+
                     if pd.notna(sito) and str(sito).startswith("http") and pd.notna(email):
-                        key_prefix = f"{azienda}_{i}"
-
-                        with st.expander(f"📩 Email per {azienda} ({email})"):
-                            # Testo sito e suggerimento AI (solo se il campo è vuoto)
-                            if not row["Corpo Email"]:
-                                text = extract_text_from_homepage(sito)
-                                corpo_default = generate_email_with_gemini(azienda, text) if text else "TESTO NON DISPONIBILE"
+                        try:
+                            text = extract_text_from_homepage(sito)
+                            if text:
+                                corpo = generate_email_with_gemini(azienda, text)
+                                if corpo is None:
+                                    corpo = "TESTO NON DISPONIBILE"
                             else:
-                                corpo_default = row["Corpo Email"]
+                                corpo = "TESTO NON DISPONIBILE"
+                        except Exception as e:
+                            corpo = "ERRORE NELLA GENERAZIONE EMAIL"
+                            print(f"❌ Errore Gemini per {azienda}: {e}")
 
-                            oggetto = st.text_input("Oggetto", row["Oggetto Email"], key=f"{key_prefix}_oggetto")
-                            corpo = st.text_area("Testo email", corpo_default, height=200, key=f"{key_prefix}_corpo")
-                            inviare = st.checkbox("✅ Invia a questa azienda", value=row["Da Inviare"], key=f"{key_prefix}_invio")
+                    lista_email.append({
+                        "Azienda": azienda,
+                        "Sito": sito,
+                        "Email": email,
+                        "Oggetto Email": oggetto,
+                        "Corpo Email": corpo,
+                        "Da Inviare": invio
+                    })
 
-                            updated_rows.append({
-                                "Azienda": azienda,
-                                "Sito": sito,
-                                "Email": email,
-                                "Oggetto Email": oggetto,
-                                "Corpo Email": corpo,
-                                "Da Inviare": inviare
-                            })
+                df_finale = pd.DataFrame(lista_email)
+                st.session_state["df_result"] = df_finale
+                st.session_state["csv_buffer"] = df_finale.to_csv(index=False).encode("utf-8")
+                st.success("✅ Email generate. Ora puoi modificarle.")
+            else:
+                st.error("❌ File 'risultati.csv' non trovato dopo l'estrazione.")
 
-                st.session_state["df_result"] = pd.DataFrame(updated_rows)
+        # Personalizzazione email
+        if "df_result" in st.session_state:
+            df_result = st.session_state["df_result"]
+            st.subheader("📨 Personalizza email")
+
+            updated_rows = []
+
+            for i, row in df_result.iterrows():
+                azienda = row["Azienda"]
+                sito = row["Sito"]
+                email = row["Email"]
+
+                if pd.notna(email):
+                    key_prefix = f"{azienda}_{i}"
+
+                    with st.expander(f"📩 {azienda} – {email}"):
+                        oggetto = st.text_input("Oggetto", row["Oggetto Email"], key=f"{key_prefix}_oggetto")
+                        corpo = st.text_area("Testo email", row["Corpo Email"], height=200, key=f"{key_prefix}_corpo")
+                        inviare = st.checkbox("✅ Invia a questa azienda", value=row["Da Inviare"], key=f"{key_prefix}_invio")
+
+                        updated_rows.append({
+                            "Azienda": azienda,
+                            "Sito": sito,
+                            "Email": email,
+                            "Oggetto Email": oggetto,
+                            "Corpo Email": corpo,
+                            "Da Inviare": inviare
+                        })
+
+            st.session_state["df_result"] = pd.DataFrame(updated_rows)
 
     except Exception as e:
-        st.error(f"❌ Errore durante la lettura del file: {e}")
+        st.error(f"❌ Errore nella lettura o generazione: {e}")
 else:
     st.info("Carica un file Excel per iniziare.")
 
