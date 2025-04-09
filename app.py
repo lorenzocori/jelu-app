@@ -52,21 +52,12 @@ if file:
                     destinatario = row["Email"]
 
                     if pd.notna(sito) and str(sito).startswith("http") and pd.notna(destinatario):
-                        with st.expander(f"📩 Email per {azienda} ({destinatario})"):
-                            try:
-                                text = extract_text_from_homepage(sito)
-                                if text:
-                                    corpo_email = generate_email_with_gemini(azienda, text)
-                                    if corpo_email:
-                                        st.markdown("**Oggetto:** Proposta di collaborazione con JELU Consulting")
-                                        st.write(corpo_email)
-                                    else:
-                                        st.warning(f"⚠️ Gemini non ha generato nulla per **{azienda}**.")
-                                else:
-                                    st.warning(f"⚠️ Nessun testo trovato sulla homepage di **{azienda}**.")
-                            except Exception as e:
-                                st.error(f"❌ Errore nella generazione dell'email per {azienda}: {e}")
-
+                        text = extract_text_from_homepage(sito)
+                        if text:
+                            corpo_email = generate_email_with_gemini(azienda, text)
+                            with st.expander(f"📩 Email per {azienda} ({destinatario})"):
+                                st.markdown("**Oggetto:** Proposta di collaborazione con JELU Consulting")
+                                st.write(corpo_email)
 
     except Exception as e:
         st.error(f"❌ Errore durante la lettura del file: {e}")
