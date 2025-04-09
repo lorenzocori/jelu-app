@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import asyncio
@@ -8,11 +9,9 @@ from postino import process_csv, extract_text_from_homepage, generate_email_with
 
 st.title("📬 Automazione JELU: da Excel all'email ✨")
 
-# Email mittente e password
 st.session_state["mittente"] = st.text_input("📤 Email del mittente", value=st.session_state.get("mittente", ""))
 st.session_state["password"] = st.text_input("🔐 Password dell'app", type="password", value=st.session_state.get("password", ""))
 
-# Caricamento Excel
 file = st.file_uploader("📎 Carica il file Excel con le aziende", type=["xls"])
 
 if file:
@@ -31,19 +30,16 @@ if file:
             if os.path.exists("risultati.csv"):
                 df_result = pd.read_csv("risultati.csv")
 
-                # 🔧 Aggiunta colonne mancanti + generazione email con Gemini
                 lista_email = []
                 for i, row in df_result.iterrows():
                     azienda = row["Azienda"]
                     sito = row["Sito"]
                     email = row["Email"]
-
-                    # Default
                     oggetto = "Proposta di collaborazione con JELU Consulting"
                     corpo = ""
                     invio = True
 
-                    if pd.notna(sito) and str(sito).startswith("http") and pd.notna(email):
+                    if pd.notna(sito) and str(sito).startswith("http"):
                         try:
                             text = extract_text_from_homepage(sito)
                             if text:
@@ -72,7 +68,6 @@ if file:
             else:
                 st.error("❌ File 'risultati.csv' non trovato dopo l'estrazione.")
 
-        # Personalizzazione email
         if "df_result" in st.session_state:
             df_result = st.session_state["df_result"]
             st.subheader("📨 Personalizza email")
@@ -83,23 +78,23 @@ if file:
                 azienda = row["Azienda"]
                 sito = row["Sito"]
                 email = row["Email"]
+                print(f"DEBUG – Visualizzo blocco per: {azienda} ({email})")  # 👈 utile per debugging
 
-                if pd.notna(email):
-                    key_prefix = f"{azienda}_{i}"
+                key_prefix = f"{azienda}_{i}"
 
-                    with st.expander(f"📩 {azienda} – {email}"):
-                        oggetto = st.text_input("Oggetto", row["Oggetto Email"], key=f"{key_prefix}_oggetto")
-                        corpo = st.text_area("Testo email", row["Corpo Email"], height=200, key=f"{key_prefix}_corpo")
-                        inviare = st.checkbox("✅ Invia a questa azienda", value=row["Da Inviare"], key=f"{key_prefix}_invio")
+                with st.expander(f"📩 {azienda} – {email if pd.notna(email) else 'email non disponibile'}"):
+                    oggetto = st.text_input("Oggetto", row.get("Oggetto Email", ""), key=f"{key_prefix}_oggetto")
+                    corpo = st.text_area("Testo email", row.get("Corpo Email", ""), height=200, key=f"{key_prefix}_corpo")
+                    inviare = st.checkbox("✅ Invia a questa azienda", value=row.get("Da Inviare", True), key=f"{key_prefix}_invio")
 
-                        updated_rows.append({
-                            "Azienda": azienda,
-                            "Sito": sito,
-                            "Email": email,
-                            "Oggetto Email": oggetto,
-                            "Corpo Email": corpo,
-                            "Da Inviare": inviare
-                        })
+                    updated_rows.append({
+                        "Azienda": azienda,
+                        "Sito": sito,
+                        "Email": email,
+                        "Oggetto Email": oggetto,
+                        "Corpo Email": corpo,
+                        "Da Inviare": inviare
+                    })
 
             st.session_state["df_result"] = pd.DataFrame(updated_rows)
 
@@ -108,7 +103,6 @@ if file:
 else:
     st.info("Carica un file Excel per iniziare.")
 
-# Invio email
 if "df_result" in st.session_state and st.button("✉️ Invia Email a tutte le aziende selezionate"):
     mittente = st.session_state.get("mittente", "")
     password = st.session_state.get("password", "")
