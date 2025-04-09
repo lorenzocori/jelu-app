@@ -25,29 +25,13 @@ def extract_text_from_homepage(url):
     return text[:4000]
 
 def generate_email_with_gemini(company_name, text):
-    genai.configure(api_key="AIzaSyBwVUUPRA8TNfZ4M6mEOMaBeudjFwok30Y")
+    genai.configure(api_key="INSERT_YOUR_API_KEY")
     model = genai.GenerativeModel("gemini-1.5-flash-latest")
 
     prompt = f"""
-    Scrivi un'email formale e personalizzata indirizzata a **{company_name}**, da parte di JELU Consulting.
-
-    JELU Consulting è una realtà nata nella LUISS Guido Carli, che si occupa di consulenza aziendale e innovazione strategica. 
-    Aiutiamo le aziende a crescere offrendo soluzioni personalizzate, con oltre 90 associati, 250 alumni e più di 20 partnership attive.
-
-    Di seguito trovi informazioni sull’azienda {company_name}, estratte dal suo sito web:
-
-    {text}
-
-    Usa queste informazioni per rendere l’email davvero rilevante e mirata. Evita segnaposto come [Nome del destinatario] o [Nome dell'azienda del destinatario]. 
-    Inserisci direttamente il nome dell'azienda nel testo. 
-    Non scrivere l'oggetto. Scrivi solo il corpo dell'email.
-
-    Firma l’email così:
-
-    Cordiali saluti,  
-    JELU Consulting  
-    Email: ufficiostampa@jelu.it  
-    Sito web: jelu.it
+    Scrivi un'email formale e personalizzata indirizzata a {company_name}, da parte di JELU Consulting.
+    (Testo sito web):\n{text}
+    Firma: JELU Consulting, Email: ufficiostampa@jelu.it, jelu.it
     """
     try:
         response = model.generate_content(prompt)
@@ -63,15 +47,10 @@ def invia_email(mittente, password, destinatario, oggetto, corpo):
         <html>
           <body style="background-color:#003153; color:white; font-family:Arial, sans-serif; padding:30px;">
             <div style="text-align:center;">
-                <img src="https://static.wixstatic.com/media/d61b9f_43cd02c06bdf456dba086be862a4b4bc~mv2.png" alt="JELU Consulting" style="width: 150px; height: auto; margin-bottom: 30px;">
+                <img src="https://static.wixstatic.com/media/d61b9f_43cd02c06bdf456dba086be862a4b4bc~mv2.png" style="width: 150px; height: auto; margin-bottom: 30px;">
             </div>
-
             <div style="max-width:700px; margin:auto; font-size:16px; line-height:1.6;">
               {corpo_html}
-            </div>
-
-            <div style="text-align:center; margin-top:40px;">
-                <img src="https://static.wixstatic.com/media/d61b9f_43cd02c06bdf456dba086be862a4b4bc~mv2.png" alt="JELU Consulting" style="width: 150px; height: auto; margin-bottom: 30px;">
             </div>
           </body>
         </html>
@@ -97,53 +76,35 @@ def invia_email(mittente, password, destinatario, oggetto, corpo):
 
 def process_csv(file_path, mittente, password, progress_callback=None, log_callback=None):
     try:
-        print("📂 Directory corrente:", os.getcwd())
         if not os.path.exists(file_path):
             print(f"❌ File non trovato: {file_path}")
             return
 
         df = pd.read_csv(file_path)
 
-        if "Sito" not in df.columns or "Azienda" not in df.columns or "Email" not in df.columns:
-            print("Errore: Il file CSV deve contenere le colonne 'Sito', 'Azienda' e 'Email'")
-            return
-
-        if "Stato Invio" not in df.columns:
-            df["Stato Invio"] = None
-
-        if "Oggetto Email" not in df.columns:
-            df["Oggetto Email"] = None
+        required = ["Sito", "Azienda", "Email", "Oggetto Email", "Corpo Email", "Da Inviare"]
+        for col in required:
+            if col not in df.columns:
+                print(f"❌ Colonna mancante nel CSV: {col}")
+                return
 
         for index, row in df.iterrows():
-            url = row.get("Sito")
-            company_name = row.get("Azienda")
-            email_destinatario = row.get("Email")
-            success = False
-
-            if pd.isna(url) or not str(url).startswith("http") or pd.isna(email_destinatario):
-                print(f"Dati mancanti per {company_name}, saltato.")
+            if not row["Da Inviare"]:
+                print(f"❌ Email NON inviata a {row['Azienda']} (utente ha deselezionato)")
                 df.at[index, "Stato Invio"] = "Saltato"
                 continue
 
-            print(f"\n📨 Generazione email per: {company_name} ({url})")
-            text = extract_text_from_homepage(url)
+            email = row["Email"]
+            sito = row["Sito"]
+            azienda = row["Azienda"]
+            oggetto = row["Oggetto Email"]
+            corpo = row["Corpo Email"]
 
-            if text:
-                corpo_email = generate_email_with_gemini(company_name, text)
-                if corpo_email:
-                    oggetto = f"Proposta di collaborazione con JELU Consulting"
-                    df.at[index, "Oggetto Email"] = oggetto
-                    print("✉️ Invio email a:", email_destinatario)
-                    success = invia_email(mittente, password, email_destinatario, oggetto, corpo_email)
-                else:
-                    print(f"❌ Email non generata per {company_name}")
-            else:
-                print(f"❌ Nessun testo trovato per {company_name}")
-
+            success = invia_email(mittente, password, email, oggetto, corpo)
             df.at[index, "Stato Invio"] = "OK" if success else "Errore"
 
             if log_callback:
-                log_callback(f"📨 Email per {company_name}: {'✅ Inviata' if success else '❌ Errore'}")
+                log_callback(f"{azienda}: {'✅ Inviata' if success else '❌ Errore'}")
 
             if progress_callback:
                 progress_callback((index + 1) / len(df))
@@ -151,17 +112,13 @@ def process_csv(file_path, mittente, password, progress_callback=None, log_callb
             time.sleep(3)
 
         df.to_csv(file_path, index=False)
-        print("\n✅ Tutte le email processate e salvate nel file.")
+        print("✅ Invii completati e salvati nel CSV.")
 
     except Exception as e:
-        print(f"❌ Errore fatale in process_csv: {type(e).__name__} - {e}")
+        print(f"❌ Errore generale in process_csv: {type(e).__name__} - {e}")
 
 if __name__ == "__main__":
-    try:
-        FILE_PATH = "risultati.csv"
-        print("🛠️ Directory corrente:", os.getcwd())
-        EMAIL_MITTENTE = input("Inserisci l'email del mittente: ")
-        PASSWORD_EMAIL = input("Inserisci la password dell'app: ")
-        process_csv(FILE_PATH, EMAIL_MITTENTE, PASSWORD_EMAIL)
-    except Exception as e:
-        print(f"❌ Errore fatale: {type(e).__name__} - {e}")
+    FILE_PATH = "risultati.csv"
+    EMAIL = input("Email mittente: ")
+    PASS = input("Password app: ")
+    process_csv(FILE_PATH, EMAIL, PASS)
