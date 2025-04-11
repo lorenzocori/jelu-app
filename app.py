@@ -83,39 +83,84 @@ else:
     st.info("Carica un file Excel per iniziare.")
 
 # Invio email se risultati presenti
-if "df_result" in st.session_state and st.button("✉️ Invia Email a tutte le aziende"):
+# 🔁 Pulsante per inviare email
+if "df_result" in st.session_state:
+
+    st.subheader("✉️ Invio Email")
+
+    modifica_email = st.checkbox("✏️ Voglio modificare le email prima dell'invio")
+
     mittente = st.session_state.get("mittente", "")
     password = st.session_state.get("password", "")
 
     if mittente and password:
-        st.info("📤 Invio email in corso...")
 
-        df_result = st.session_state["df_result"]
-        df_result.to_csv("risultati.csv", index=False)
+        if modifica_email:
+            # Modalità personalizzazione manuale
+            df_result = st.session_state["df_result"]
+            emails_da_inviare = []
 
-        log = st.empty()
-        progress_bar = st.progress(0)
+            st.info("Modifica oggetto, corpo e scegli le email da inviare")
 
-        try:
-            process_csv(
-                "risultati.csv",
-                mittente,
-                password,
-                progress_callback=progress_bar.progress,
-                log_callback=log.write
-            )
-            st.success("✅ Tutte le email sono state inviate.")
+            for i, row in df_result.iterrows():
+                azienda = row["Azienda"]
+                email = row["Email"]
+                sito = row["Sito"]
 
-            if "csv_buffer" in st.session_state:
-                st.download_button(
-                    "📥 Scarica il file aggiornato",
-                    st.session_state["csv_buffer"],
-                    file_name="email_inviate.csv",
-                    mime="text/csv"
+                if pd.isna(email) or email.strip() == "" or not str(sito).startswith("http"):
+                    continue
+
+                from postino import extract_text_from_homepage, generate_email_with_gemini
+                testo = extract_text_from_homepage(sito)
+                corpo_default = generate_email_with_gemini(azienda, testo) if testo else ""
+
+                with st.expander(f"📩 {azienda} ({email})"):
+                    invia = st.checkbox(f"✅ Invia a {azienda}", key=f"invia_{i}", value=True)
+                    oggetto = st.text_input("Oggetto", value="Proposta di collaborazione con JELU Consulting", key=f"subject_{i}")
+                    corpo = st.text_area("Corpo", value=corpo_default, height=200, key=f"body_{i}")
+
+                    if invia:
+                        emails_da_inviare.append({
+                            "azienda": azienda,
+                            "email": email,
+                            "subject": oggetto,
+                            "body": corpo
+                        })
+
+            if st.button("📨 Invia Email Selezionate"):
+                from postino import invia_email
+
+                for idx, email in enumerate(emails_da_inviare):
+                    success = invia_email(
+                        mittente,
+                        password,
+                        email["email"],
+                        email["subject"],
+                        email["body"]
+                    )
+                    if success:
+                        st.success(f"✅ Email inviata a {email['azienda']}")
+                    else:
+                        st.error(f"❌ Errore invio a {email['azienda']}")
+
+        else:
+            # Modalità automatica già esistente
+            if st.button("📨 Invia Email a tutte le aziende (automatica)"):
+                st.info("📤 Invio email in corso...")
+
+                log = st.empty()
+                progress_bar = st.progress(0)
+
+                process_csv(
+                    "risultati.csv",
+                    mittente,
+                    password,
+                    progress_callback=progress_bar.progress,
+                    log_callback=log.write
                 )
-            else:
-                st.warning("⚠️ Nessun contenuto da scaricare trovato.")
-        except Exception as e:
-            st.error(f"❌ Errore durante l'invio: {type(e).__name__} – {e}")
+
+                st.success("✅ Tutte le email sono state inviate.")
+                with open("risultati.csv", "rb") as f:
+                    st.download_button("📥 Scarica il file aggiornato", f, file_name="email_inviate.csv")
     else:
         st.error("❗ Inserisci sia l'email del mittente che la password dell'app.")
