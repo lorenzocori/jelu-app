@@ -53,13 +53,18 @@ if file:
                     if pd.isna(email) or not str(sito).startswith("http"):
                         continue
 
-                    text = extract_text_from_homepage(sito)
-                    corpo_email = generate_email_with_gemini(azienda, text) if text else ""
+                    corpo_key = f"body_{i}"
+                    if corpo_key not in st.session_state:
+                        text = extract_text_from_homepage(sito)
+                        corpo_email = generate_email_with_gemini(azienda, text) if text else ""
+                        st.session_state[corpo_key] = corpo_email
+                    else:
+                        corpo_email = st.session_state[corpo_key]
 
                     with st.expander(f"📩 {azienda} ({email})"):
                         invia = st.checkbox(f"Invia a {azienda}", key=f"invia_{i}", value=True)
                         subject = st.text_input("Oggetto", value="Proposta di collaborazione con JELU Consulting", key=f"subject_{i}")
-                        corpo = st.text_area("Corpo dell'email", value=corpo_email, height=200, key=f"body_{i}")
+                        corpo = st.text_area("Corpo dell'email", value=corpo_email, height=200, key=corpo_key)
 
                         if invia:
                             emails_da_inviare.append({
