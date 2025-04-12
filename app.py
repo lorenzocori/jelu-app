@@ -1,10 +1,9 @@
-
 import streamlit as st
 import pandas as pd
 import asyncio
 import os
 from estrattore_contatti import main as estrattore_main
-from postino import extract_text_from_homepage, generate_email_with_gemini, invia_email, process_csv
+from postino import extract_text_from_homepage, generate_email_with_gemini, invia_email
 
 st.set_page_config(layout="wide")
 st.title("📬 Automazione JELU: da Excel all'email ✨")
@@ -41,7 +40,7 @@ if file:
             st.session_state["df_result"] = df_result
 
             if "Azienda" in df_result.columns and "Sito" in df_result.columns and "Email" in df_result.columns:
-                st.subheader("📨 Email generate automaticamente (modificabili)")
+                st.subheader("📨 Email personalizzabili")
 
                 emails_da_inviare = []
 
@@ -54,17 +53,18 @@ if file:
                         continue
 
                     corpo_key = f"body_{i}"
-                    if corpo_key not in st.session_state:
-                        text = extract_text_from_homepage(sito)
-                        corpo_email = generate_email_with_gemini(azienda, text) if text else ""
-                        st.session_state[corpo_key] = corpo_email
-                    else:
-                        corpo_email = st.session_state[corpo_key]
 
                     with st.expander(f"📩 {azienda} ({email})"):
-                        invia = st.checkbox(f"Invia a {azienda}", key=f"invia_{i}", value=True)
+                        invia = st.checkbox(f"✅ Invia a {azienda}", key=f"invia_{i}", value=False)
                         subject = st.text_input("Oggetto", value="Proposta di collaborazione con JELU Consulting", key=f"subject_{i}")
-                        corpo = st.text_area("Corpo dell'email", value=corpo_email, height=200, key=corpo_key)
+
+                        if st.button("✨ Genera email con Gemini", key=f"generate_{i}"):
+                            text = extract_text_from_homepage(sito)
+                            corpo_generato = generate_email_with_gemini(azienda, text) if text else "⚠️ Nessun testo disponibile"
+                            st.session_state[corpo_key] = corpo_generato
+
+                        corpo_corrente = st.session_state.get(corpo_key, "")
+                        corpo = st.text_area("Corpo dell'email", value=corpo_corrente, height=200, key=corpo_key)
 
                         if invia:
                             emails_da_inviare.append({
@@ -94,3 +94,9 @@ if file:
         st.error(f"❌ Errore durante la lettura del file: {e}")
 else:
     st.info("Carica un file Excel per iniziare.")
+"""
+
+# Salvo il nuovo file come app.py
+manual_file_path = "/mnt/data/app.py"
+with open(manual_file_path, "w", encoding="utf-8") as f:
+    f.write(app_code_manual_generation)
