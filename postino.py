@@ -92,7 +92,9 @@ def invia_email(mittente, password, destinatario, oggetto, corpo):
         print(f"✅ Email inviata a {destinatario}")
         return True
     except Exception as e:
-        print(f"❌ Errore nell'invio a {destinatario}: {e}")
+        import traceback
+        traceback.print_exc()
+        print(f"❌ Errore dettagliato nell'invio a {destinatario}: {type(e).__name__} - {e}")
         return False
 
 def process_csv(file_path, mittente, password, progress_callback=None, log_callback=None):
