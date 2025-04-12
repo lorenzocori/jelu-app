@@ -39,7 +39,6 @@ if file:
             st.info("⏳ Estrazione in corso...")
             asyncio.run(estrattore_main(csv_path=temp_file))
             st.success("✅ Estrazione completata. File generato: risultati.csv")
-
             if os.path.exists("risultati.csv"):
                 df_result = pd.read_csv("risultati.csv")
                 st.session_state["df_result"] = df_result
@@ -50,6 +49,7 @@ if file:
         if df_result is not None and "Azienda" in df_result.columns and "Sito" in df_result.columns and "Email" in df_result.columns:
             st.subheader("📨 Email personalizzabili")
             emails_da_inviare = []
+            risultati_finali = []
 
             for i, row in df_result.iterrows():
                 azienda = row["Azienda"]
@@ -59,10 +59,11 @@ if file:
                     continue
 
                 if azienda not in st.session_state["email_states"]:
+                    text = extract_text_from_homepage(sito)
+                    corpo_generato = generate_email_with_gemini(azienda, text) if text else "⚠️ Nessun testo disponibile"
                     st.session_state["email_states"][azienda] = {
                         "subject": "Proposta di collaborazione con JELU Consulting",
-                        "body": "",
-                        "generated": False,
+                        "body": corpo_generato,
                         "send": False
                     }
 
@@ -71,13 +72,6 @@ if file:
                 with st.expander(f"📩 {azienda} ({email})"):
                     stato["send"] = st.checkbox(f"✅ Invia a {azienda}", value=stato["send"], key=f"invia_{i}")
                     stato["subject"] = st.text_input("Oggetto", value=stato["subject"], key=f"subject_{i}")
-
-                    if st.button("✨ Genera email con Gemini", key=f"generate_{i}"):
-                        text = extract_text_from_homepage(sito)
-                        corpo_generato = generate_email_with_gemini(azienda, text) if text else "⚠️ Nessun testo disponibile"
-                        stato["body"] = corpo_generato
-                        stato["generated"] = True
-
                     stato["body"] = st.text_area("Corpo dell'email", value=stato["body"], height=200, key=f"body_{i}")
 
                     if stato["send"]:
@@ -93,17 +87,32 @@ if file:
                 password = st.session_state["password"]
 
                 for email in emails_da_inviare:
-                    success = invia_email(
+                    stato_invio = "OK" if invia_email(
                         mittente,
                         password,
                         email["email"],
                         email["subject"],
                         email["body"]
-                    )
-                    if success:
+                    ) else "Errore"
+
+                    risultati_finali.append({
+                        "Azienda": email["azienda"],
+                        "Email": email["email"],
+                        "Oggetto": email["subject"],
+                        "Corpo": email["body"],
+                        "Stato Invio": stato_invio
+                    })
+
+                    if stato_invio == "OK":
                         st.success(f"✅ Email inviata a {email['azienda']}")
                     else:
                         st.error(f"❌ Errore invio a {email['azienda']}")
+
+                # Salva tutto in CSV
+                risultato_df = pd.DataFrame(risultati_finali)
+                risultato_df.to_csv("email_inviate_finale.csv", index=False)
+                with open("email_inviate_finale.csv", "rb") as f:
+                    st.download_button("📥 Scarica il CSV delle email inviate", f, file_name="email_inviate_finale.csv")
     except Exception as e:
         st.error(f"❌ Errore durante la lettura del file: {e}")
 else:
