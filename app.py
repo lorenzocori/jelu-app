@@ -1,24 +1,27 @@
+
 import streamlit as st
 import pandas as pd
 import asyncio
 import os
 from estrattore_contatti import main as estrattore_main
-from postino import process_csv
+from postino import extract_text_from_homepage, generate_email_with_gemini, invia_email
 
+st.set_page_config(layout="wide")
 st.title("📬 Automazione JELU: da Excel all'email ✨")
 
-# Caricamento file Excel
 file = st.file_uploader("📎 Carica il file Excel con le aziende", type=["xls"])
 
-# Inserimento email mittente e password app
 if "mittente" not in st.session_state:
     st.session_state["mittente"] = ""
 if "password" not in st.session_state:
     st.session_state["password"] = ""
+if "df_result" not in st.session_state:
+    st.session_state["df_result"] = None
+if "email_states" not in st.session_state:
+    st.session_state["email_states"] = {}
 
 st.session_state["mittente"] = st.text_input("📤 Email del mittente", st.session_state["mittente"])
 st.session_state["password"] = st.text_input("🔐 Password dell'app", type="password", value=st.session_state["password"])
-
 
 if file:
     try:
@@ -36,54 +39,81 @@ if file:
             st.info("⏳ Estrazione in corso...")
             asyncio.run(estrattore_main(csv_path=temp_file))
             st.success("✅ Estrazione completata. File generato: risultati.csv")
+            if os.path.exists("risultati.csv"):
+                df_result = pd.read_csv("risultati.csv")
+                st.session_state["df_result"] = df_result
+                st.rerun()
 
-        if os.path.exists("risultati.csv"):
-            df_result = pd.read_csv("risultati.csv")
-            st.session_state["df_result"] = df_result  # 🔒 SALVA STATO
+        df_result = st.session_state["df_result"]
 
-            if "Azienda" in df_result.columns and "Sito" in df_result.columns and "Email" in df_result.columns:
-                st.subheader("📨 Anteprima delle email generate")
-                from postino import extract_text_from_homepage, generate_email_with_gemini
+        if df_result is not None and "Azienda" in df_result.columns and "Sito" in df_result.columns and "Email" in df_result.columns:
+            st.subheader("📨 Email personalizzabili")
+            emails_da_inviare = []
+            risultati_finali = []
 
-                for _, row in df_result.iterrows():
-                    azienda = row["Azienda"]
-                    sito = row["Sito"]
-                    destinatario = row["Email"]
+            for i, row in df_result.iterrows():
+                azienda = row["Azienda"]
+                email = row["Email"]
+                sito = row["Sito"]
+                if pd.isna(email) or not str(sito).startswith("http"):
+                    continue
 
-                    if pd.notna(sito) and str(sito).startswith("http") and pd.notna(destinatario):
-                        text = extract_text_from_homepage(sito)
-                        if text:
-                            corpo_email = generate_email_with_gemini(azienda, text)
-                            with st.expander(f"📩 Email per {azienda} ({destinatario})"):
-                                st.markdown("**Oggetto:** Proposta di collaborazione con JELU Consulting")
-                                st.write(corpo_email)
+                if azienda not in st.session_state["email_states"]:
+                    text = extract_text_from_homepage(sito)
+                    corpo_generato = generate_email_with_gemini(azienda, text) if text else "⚠️ Nessun testo disponibile"
+                    st.session_state["email_states"][azienda] = {
+                        "subject": "Proposta di collaborazione con JELU Consulting",
+                        "body": corpo_generato,
+                        "send": False
+                    }
+
+                stato = st.session_state["email_states"][azienda]
+
+                with st.expander(f"📩 {azienda} ({email})"):
+                    stato["send"] = st.checkbox(f"✅ Invia a {azienda}", value=stato["send"], key=f"invia_{i}")
+                    stato["subject"] = st.text_input("Oggetto", value=stato["subject"], key=f"subject_{i}")
+                    stato["body"] = st.text_area("Corpo dell'email", value=stato["body"], height=200, key=f"body_{i}")
+
+                    if stato["send"]:
+                        emails_da_inviare.append({
+                            "azienda": azienda,
+                            "email": email,
+                            "subject": stato["subject"],
+                            "body": stato["body"]
+                        })
+
+            if emails_da_inviare and st.button("📨 Invia Email Selezionate"):
+                mittente = st.session_state["mittente"]
+                password = st.session_state["password"]
+
+                for email in emails_da_inviare:
+                    stato_invio = "OK" if invia_email(
+                        mittente,
+                        password,
+                        email["email"],
+                        email["subject"],
+                        email["body"]
+                    ) else "Errore"
+
+                    risultati_finali.append({
+                        "Azienda": email["azienda"],
+                        "Email": email["email"],
+                        "Oggetto": email["subject"],
+                        "Corpo": email["body"],
+                        "Stato Invio": stato_invio
+                    })
+
+                    if stato_invio == "OK":
+                        st.success(f"✅ Email inviata a {email['azienda']}")
+                    else:
+                        st.error(f"❌ Errore invio a {email['azienda']}")
+
+                # Salva tutto in CSV
+                risultato_df = pd.DataFrame(risultati_finali)
+                risultato_df.to_csv("email_inviate_finale.csv", index=False)
+                with open("email_inviate_finale.csv", "rb") as f:
+                    st.download_button("📥 Scarica il CSV delle email inviate", f, file_name="email_inviate_finale.csv")
     except Exception as e:
         st.error(f"❌ Errore durante la lettura del file: {e}")
 else:
     st.info("Carica un file Excel per iniziare.")
-
-# 🔁 Pulsante sempre attivo se abbiamo dati
-if "df_result" in st.session_state and st.button("✉️ Invia Email a tutte le aziende"):
-    mittente = st.session_state.get("mittente", "")
-    password = st.session_state.get("password", "")
-
-    if mittente and password:
-        st.info("📤 Invio email in corso...")
-
-        log = st.empty()
-        progress_bar = st.progress(0)
-
-        process_csv(
-            "risultati.csv",
-            mittente,
-            password,
-            progress_callback=progress_bar.progress,
-            log_callback=log.write
-        )
-
-        st.success("✅ Tutte le email sono state inviate.")
-        with open("risultati.csv", "rb") as f:
-            st.download_button("📥 Scarica il file aggiornato", f, file_name="email_inviate.csv")
-    else:
-        st.error("❗ Inserisci sia l'email del mittente che la password dell'app.")
-
