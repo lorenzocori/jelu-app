@@ -32,8 +32,25 @@ if file:
         aziende = df["Ragione sociale"].dropna().unique().tolist()
         st.success(f"✅ {len(aziende)} aziende caricate correttamente.")
 
+        # Nuova selezione: quante aziende vuoi estrarre?
+        num_aziende = st.selectbox("📊 Quante aziende vuoi estrarre?", [50, 100])
+
+        # Escludi aziende già contattate (presenti nel file finale)
+        aziende_inviate = []
+        if os.path.exists("email_inviate_finale.csv"):
+            df_old = pd.read_csv("email_inviate_finale.csv")
+            if "Azienda" in df_old.columns and "Stato Invio" in df_old.columns:
+                aziende_inviate = df_old[df_old["Stato Invio"] == "OK"]["Azienda"].tolist()
+        
+        # Filtra aziende nuove
+        aziende_nuove = [a for a in aziende if a not in aziende_inviate][:num_aziende]
+        
+        # Salva nel CSV temporaneo
         temp_file = "aziende_temp.csv"
-        pd.DataFrame(aziende, columns=["Azienda"]).to_csv(temp_file, index=False)
+        pd.DataFrame(aziende_nuove, columns=["Azienda"]).to_csv(temp_file, index=False)
+        
+        st.info(f"📂 Selezionate {len(aziende_nuove)} aziende non ancora contattate.")
+
 
         if st.button("🚀 Estrai contatti"):
             st.info("⏳ Estrazione in corso...")
