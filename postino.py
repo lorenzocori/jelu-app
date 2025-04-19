@@ -62,17 +62,63 @@ def invia_email(mittente, password, destinatario, oggetto, corpo):
         html_template = f"""
         <html>
           <body style="background-color:#003153; color:white; font-family:Arial, sans-serif; padding:30px;">
-            <div style="text-align:center;">
-                <img src="https://static.wixstatic.com/media/d61b9f_43cd02c06bdf456dba086be862a4b4bc~mv2.png" alt="JELU Consulting" style="width: 150px; height: auto; margin-bottom: 30px;">
+
+            <!-- Logo condensato -->
+            <div style="text-align:center; margin-bottom:40px;">
+              <img src="https://raw.githubusercontent.com/lorenzocori/jelu-app/refs/heads/main/NEW_logo%20condensato%20bianco.png" alt="JELU Condensato" style="height:80px;">
             </div>
 
-            <div style="max-width:700px; margin:auto; font-size:16px; line-height:1.6;">
+            <!-- Titolo -->
+            <div style="text-align:left; max-width:700px; margin:auto; margin-bottom:20px;">
+              <h2 style="color:#FDDD37;">Proposta di collaborazione con JELU Consulting</h2>
+            </div>
+
+            <!-- Corpo email -->
+            <div style="max-width:700px; margin:auto; font-size:16px; line-height:1.6; color:white;">
               {corpo_html}
             </div>
 
-            <div style="text-align:center; margin-top:40px;">
-                <img src="https://static.wixstatic.com/media/d61b9f_43cd02c06bdf456dba086be862a4b4bc~mv2.png" alt="JELU Consulting" style="width: 150px; height: auto; margin-bottom: 30px;">
-            </div>
+            <!-- Firma -->
+            <table cellpadding="0" cellspacing="0" style="font-family:Arial, sans-serif; font-size:15px; line-height:1.5; color:#ffffff; max-width:700px; margin:40px auto 0 auto;">
+              <tr>
+                <!-- Logo -->
+                <td style="padding-right:20px; border-right:4px solid #FDDD37;">
+                  <img src="https://raw.githubusercontent.com/lorenzocori/jelu-app/refs/heads/main/NEW_logo%20bianco.png" alt="JELU Consulting" style="height:100px;">
+                  <br><br>
+                  <a href="https://www.instagram.com/jeluconsulting" target="_blank" style="margin-right:8px;"><img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" alt="Instagram" width="20"></a>
+                  <a href="https://www.linkedin.com/company/jelu-consulting" target="_blank" style="margin-right:8px;"><img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png" alt="LinkedIn" width="20"></a>
+                  <a href="https://www.facebook.com/jeluconsulting" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg" alt="Facebook" width="20"></a>
+                </td>
+
+                <!-- Testo -->
+                <td style="padding-left:20px;">
+                  <p style="margin:0;"><strong style="font-size:17px;">Filippo Paglialonga</strong> / Responsabile Sales</p>
+                  <p style="margin:5px 0;">Mobile: <strong>+39 348 824 4062</strong><br>
+                  E-mail: <a href="mailto:ufficiostampa@jelu.it" style="color:#FDDD37;">ufficiostampa@jelu.it</a></p>
+
+                  <p style="margin-top:20px;"><strong>JELU Consulting</strong><br>
+                  Viale Romania 32, 00197 Roma<br>
+                  <a href="https://jelu.it" style="color:#FDDD37;">jelu.it</a></p>
+
+                  <p style="margin-top:10px; font-size:9pt; font-family:Georgia, serif; color:rgb(0,128,0); line-height:1.2;">
+                    <img src="https://lh7-rt.googleusercontent.com/docsz/AD_4nXdopXHwK7kWbjCvwTGeZ5QShlXY4RgXV0vJ3EYtxdSrmxYK5b9qYvhatXCtpIzpgrmHQ-UF5RsZHmpSNc9xkB9HztcpM66K8K2NvXv_hFPF-MTo1kfxX5BJgaJNfa0JhJRKVOTa4qFaO6_R7FTH?key=0wII50Vk6syeoMkIOkI7kJMl" width="32" height="32" style="vertical-align:middle; margin-right:8px;">
+                    Think before you print
+                  </p>
+                </td>
+              </tr>
+
+              <!-- Footer disclaimer -->
+              <tr>
+                <td colspan="2" style="padding-top:20px; font-size:12px; color:#cccccc;">
+                  <p style="margin-bottom:5px;">
+                    <strong>IT</strong> / Questo messaggio, ed eventuali allegati, è diretto all’esclusiva attenzione del destinatario...
+                  </p>
+                  <p style="margin-top:5px;">
+                    <strong>EN</strong> / This email and any attached files are only for the attention of the intended recipient...
+                  </p>
+                </td>
+              </tr>
+            </table>
           </body>
         </html>
         """
