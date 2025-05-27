@@ -42,12 +42,7 @@ def generate_email_with_gemini(company_name, text):
     Inserisci direttamente il nome dell'azienda nel testo. 
     Non scrivere l'oggetto. Scrivi solo il corpo dell'email.
 
-    Firma l’email così:
-
-    Cordiali saluti,  
-    JELU Consulting  
-    Email: ufficiostampa@jelu.it  
-    Sito web: jelu.it
+    Non firmare l’email.
     """
     try:
         response = model.generate_content(prompt)
