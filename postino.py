@@ -32,7 +32,7 @@ def generate_email_with_gemini(company_name, text):
     Scrivi un'email formale e personalizzata indirizzata a **{company_name}**, da parte di JELU Consulting.
 
     JELU Consulting è una realtà nata nella LUISS Guido Carli, che si occupa di consulenza aziendale e innovazione strategica. 
-    Aiutiamo le aziende a crescere offrendo soluzioni personalizzate, con oltre 90 associati, 250 alumni e più di 20 partnership attive.
+    Aiutiamo le aziende a crescere offrendo soluzioni personalizzate, con oltre 90 associati, e più di 20 partnership attive.
 
     Di seguito trovi informazioni sull’azienda {company_name}, estratte dal suo sito web:
 
